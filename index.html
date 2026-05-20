@@ -1,17 +1,4 @@
-#include <WiFi.h>
-#include <WebServer.h>
 
-// WiFi
-const char* ssid = "WIFI_LAB_MOVEL";
-const char* password = "ac1ce1ss3@movel";
-
-// Potenciômetro no pino ADC
-const int potPin = 34;
-
-WebServer server(80);
-
-// HTML da página
-String paginaHTML = R"rawliteral(
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -90,39 +77,3 @@ setInterval(() => {
 
 </body>
 </html>
-)rawliteral";
-
-void handleRoot() {
-  server.send(200, "text/html", paginaHTML);
-}
-
-void handleValor() {
-  int valor = analogRead(potPin);
-  server.send(200, "text/plain", String(valor));
-}
-
-void setup() {
-  Serial.begin(115200);
-
-  WiFi.begin(ssid, password);
-
-  Serial.print("Conectando ao WiFi");
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-
-  Serial.println("\nWiFi conectado!");
-  Serial.println(WiFi.localIP());
-
-  server.on("/", handleRoot);
-  server.on("/valor", handleValor);
-
-  server.begin();
-  Serial.println("Servidor iniciado");
-}
-
-void loop() {
-  server.handleClient();
-}
