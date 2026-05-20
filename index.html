@@ -1,0 +1,128 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+// WiFi
+const char* ssid = "WIFI_LAB_MOVEL";
+const char* password = "ac1ce1ss3@movel";
+
+// Potenciômetro no pino ADC
+const int potPin = 34;
+
+WebServer server(80);
+
+// HTML da página
+String paginaHTML = R"rawliteral(
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESP32 Potenciômetro</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #cfdcf0;
+    font-family: Arial;
+}
+
+.caixa {
+    background: white;
+    padding: 40px;
+    width: 350px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.valor {
+    font-size: 40px;
+    color: #2b4c7e;
+    margin-bottom: 20px;
+}
+
+.barra-container {
+    width: 100%;
+    height: 25px;
+    background: #eee;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.barra {
+    height: 100%;
+    width: 0%;
+    background: #9aa0a6;
+    transition: 0.2s;
+}
+</style>
+</head>
+
+<body>
+
+<div class="caixa">
+    <h2>ESP32 Potenciômetro</h2>
+    <div class="valor" id="valor">0</div>
+
+    <div class="barra-container">
+        <div class="barra" id="barra"></div>
+    </div>
+</div>
+
+<script>
+
+setInterval(() => {
+    fetch('/valor')
+    .then(res => res.text())
+    .then(valor => {
+        document.getElementById("valor").innerText = valor;
+
+        let porcentagem = (valor / 4095) * 100;
+        document.getElementById("barra").style.width = porcentagem + "%";
+    });
+}, 200);
+
+</script>
+
+</body>
+</html>
+)rawliteral";
+
+void handleRoot() {
+  server.send(200, "text/html", paginaHTML);
+}
+
+void handleValor() {
+  int valor = analogRead(potPin);
+  server.send(200, "text/plain", String(valor));
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  WiFi.begin(ssid, password);
+
+  Serial.print("Conectando ao WiFi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi conectado!");
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleRoot);
+  server.on("/valor", handleValor);
+
+  server.begin();
+  Serial.println("Servidor iniciado");
+}
+
+void loop() {
+  server.handleClient();
+}
